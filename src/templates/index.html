@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Calificaciones</title>
+</head>
+<body>
+    <h1 style="padding: 20px; border-bottom: 1px solid black;">
+        Calificaciones
+    </h1>
+    <div>
+        <div style="display: flex; flex-direction: column; gap: 5px; width: fit-content; padding: 5px;">
+            <div>
+                <label for="semestre">Semestre</label>
+                <select name="semestre" id="input-semestre" required>
+                    <option value="" selected disabled>Elija una opción</option>
+                    <option value="1">Primero</option>
+                    <option value="2">Segundo</option>
+                    <option value="3">Tercero</option>
+                    <option value="4">Cuarto</option>
+                    <option value="5">Quinto</option>
+                    <option value="6">Sexto</option>
+                    <option value="7">Septimo</option>
+                    <option value="8">Octavo</option>
+                    <option value="9">Noveno</option>
+                </select>
+            </div>
+            <div>
+                <label for="asignatura">Asignatura</label>
+                <select name="asignatura" id="input-asignatura" required>
+                    
+                    
+                </select>
+            </div>
+            <div>
+                <label for="nota">Nota</label>
+                <input name="nota" id="input-nota" type="number" step="0.01" required>
+            </div>
+            <button id="btn-agregar-nota"> Añadir </button>
+        </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 10px; padding: 5px; border-top: 1px solid black;">
+        {% for calificacion in calificaciones %}
+            <div style="display: flex; flex-direction: row; gap: 5px; padding: 5px;">
+                <span>
+                    Semestre N° {{ calificacion.grado }} |
+                </span>
+                <span>
+                    {{ calificacion.asignatura }} |
+                </span>
+                <span>
+                    {{ calificacion.nota }} 
+                </span>
+                <button onclick="eliminarNota('{{calificacion.id}}')">
+                    Eliminar
+                </button>
+            </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        let inputSemestre = document.getElementById('input-semestre');
+        let inputAsignatura = document.getElementById('input-asignatura');
+        let inputNota = document.getElementById('input-nota');
+        let btnAgregarNota = document.getElementById('btn-agregar-nota');
+
+        inputSemestre.addEventListener("change", (e) => {
+            cargarAsignaturas(e.target.value);
+        });
+
+        inputAsignatura.addEventListener("change", (e) => {
+            cargarNota(inputAsignatura.value);
+        });
+
+        btnAgregarNota.addEventListener("click", (e) => {
+            let method = e.currentTarget.dataset.method;
+            agregarNota(method);
+        })
+
+        async function cargarAsignaturas (semestre='') {
+            const res = await fetch(`/api/asignaturas?semestre=${semestre}`);
+            const data = await res.json();
+            
+            if (res.ok) {
+                inputAsignatura.innerHTML = `<option value="" disabled selected>Elija una opción</option>`;
+                data.forEach(asign => {
+                    let newOpt = document.createElement("option")
+                    newOpt.value = asign.id;
+                    newOpt.text = asign.nombre
+                    
+                    inputAsignatura.appendChild(newOpt)
+                });
+            }
+        };
+
+        async function cargarNota (id_asignatura) {
+            const res = await fetch(`/api/nota?asignatura=${id_asignatura}`);
+            const data = await res.json();
+            console.log(data);
+            if (res.ok) {
+                if (data.nota) {
+                    inputNota.value = data.nota;
+                    btnAgregarNota.dataset.method = "PUT"
+                } else {
+                    btnAgregarNota.dataset.method = "POST"
+                }
+            }
+        };
+
+        async function agregarNota (method="POST") {
+            const res = await fetch(`/api/calificacion`, {
+                method: method,
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    semestre: inputSemestre.value,
+                    asignatura: inputAsignatura.value,
+                    nota: inputNota.value
+                })
+            });
+            if (res.ok) {
+                window.location.reload();
+            }
+        }
+
+        async function eliminarNota (id_calificacion) {
+            const res = await fetch(`/api/calificacion`, {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    id_calificacion: id_calificacion
+                })
+            });
+            if (res.ok) {
+                window.location.reload();
+            }
+        }
+
+    </script>
+</body>
+</html>
